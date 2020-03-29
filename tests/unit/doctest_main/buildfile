@@ -1,0 +1,3 @@
+import libs = doctest%lib{doctest}
+
+lib{doctest_main}: {hxx ixx txx cxx}{**} $libs

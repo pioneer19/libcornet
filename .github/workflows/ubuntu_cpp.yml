@@ -1,0 +1,41 @@
+name: ubuntu-latest build/test
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: install clang-9
+      run: |
+        sudo apt update && sudo apt install -y clang-9 libc++-9-dev libc++abi-9-dev \
+            && sudo apt autoremove -y --purge
+
+    - name: install build2
+      run: |
+        sudo apt install -y wget
+        wget https://packages.masterspline.eu/ubuntu/pool/main/m/masterspline-archive-keyring/masterspline-archive-keyring_2-18bionic.1_all.deb
+        sudo dpkg -i masterspline-archive-keyring_2-18bionic.1_all.deb
+        sudo apt update
+        sudo apt install -y build2 build2-tools && sync
+    - name: install ssl, jemalloc
+      run: sudo apt install -y libssl-dev libjemalloc-dev
+    - name: build
+      run: |
+        b --version
+        bdep --no-progress init -C ../libcornet-clang @clang cc config.cxx=clang++-9 \
+            config.cc.coptions="-g -O2 -Wall -Wextra -pedantic -march=native -mtune=native" \
+            config.cc.loptions=-lcrypto \
+            config.cxx.coptions=-stdlib=libc++ \
+            config.bin.lib=static
+        b -v -s -j 0 --no-progress && sync
+    - name: test
+      run:  b test
+    - name: malloc benchmarks
+      run: |
+        echo === standart allocator ===
+        ../libcornet-clang/libcornet/benchmarks/malloc/malloc_benchmark
+        echo === jemalloc allocator ===
+        LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so ../libcornet-clang/libcornet/benchmarks/malloc/malloc_benchmark

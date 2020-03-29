@@ -1,0 +1,3 @@
+libs =
+
+exe{mem_writer}: {hxx ixx txx cxx}{**}

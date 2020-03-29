@@ -1,0 +1,6 @@
+$out_root/
+{
+  include libcornet/
+}
+
+export $out_root/libcornet/$import.target

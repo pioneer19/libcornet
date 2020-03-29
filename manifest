@@ -1,0 +1,10 @@
+: 1
+name: libcornet
+version: 0.1.0-a.0.z
+summary: networking library using C++ coroutines
+license: LGPLv3+
+url: https://github.com/himera19/libcornet
+email: pioneer19@post.cz
+depends: * build2 >= 0.8.0-
+depends: * bpkg >= 0.8.0-
+depends: * doctest >= 2.3.5

@@ -1,0 +1,16 @@
+#include ../doctest_main/
+include ../../libcornet/
+#import libs  = cpu_utils%lib{cpu_utils}
+#import libs = doctest%lib{doctest}
+
+#./: exe{tls_ciphers_test}: {cxx}{tls_ciphers_test} $libs ../../../libcornet/lib{cornet} ../doctest_main/lib{doctest_main}
+
+./: exe{malloc_benchmark}: {cxx}{malloc_benchmark} $libs ../../libcornet/lib{cornet}
+obj{*}:
+{
+    cc.coptions+=-O3
+}
+exe{*}:
+{
+    cc.loptions+=-O3
+}

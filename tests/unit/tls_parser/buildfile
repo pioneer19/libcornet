@@ -1,0 +1,15 @@
+include ../doctest_main/
+include ../../../libcornet/
+
+import libs = doctest%lib{doctest}
+
+exe{tls_parser_test}: {hxx ixx txx cxx}{**} $libs \
+  ../../../libcornet/lib{cornet} \
+  ../doctest_main/lib{doctest_main}
+#  cxx{"$src_root/../libcornet/tls/parser.cpp"} cxx{../../../libcornet/tls/parser_error.cpp} \
+
+#exe{tls_parser_test}: 
+#obj{*}:
+#{
+#  cc.poptions += -I"$src_root/.."
+#}

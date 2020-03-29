@@ -1,0 +1,6 @@
+include ../doctest_main/
+include ../../../libcornet/
+#import libs  = cpu_utils%lib{cpu_utils}
+import libs = doctest%lib{doctest}
+
+exe{extendable_buffer_test}: {hxx ixx txx cxx}{**} $libs ../../../libcornet/lib{cornet} ../doctest_main/lib{doctest_main}

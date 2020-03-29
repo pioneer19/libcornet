@@ -1,0 +1,7 @@
+#import libs = libcornet%lib{cornet}
+#import libs += libhello%lib{hello}
+
+exe{rdrand}: {hxx ixx txx cxx}{**} $libs
+
+cxx.poptions =+ "-I$src_root/.."
+#cxx.poptions =+ "-I$out_root" "-I$src_root"

@@ -1,0 +1,6 @@
+#import libs = libfortests%lib{fortests}
+
+./: exe{find_mallctl}: {hxx ixx txx cxx}{**} $libs
+
+exe{*}: cc.loptions = -ldl
+#obj{*}: cc.coptions += -mtune=native -march=native

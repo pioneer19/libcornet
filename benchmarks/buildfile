@@ -1,0 +1,5 @@
+#include ./doctest_main/
+#import libs  = cpu_utils%lib{cpu_utils}
+#import libs = doctest%lib{doctest}
+
+./: {*/ -build/}
