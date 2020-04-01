@@ -30,7 +30,7 @@ EchoSession create_echo_session( pioneer19::cornet::TcpSocket tcp_socket )
 {
     char buff[1024];
 
-    auto read_bytes = co_await tcp_socket.async_read(  buff, sizeof( buff ) );
+    auto read_bytes = co_await tcp_socket.async_read( buff, sizeof( buff ) );
     std::cout << "echo_session read      " << read_bytes << " bytes" << std::endl;
     auto sent_bytes = co_await tcp_socket.async_write( buff, read_bytes );
     std::cout << "echo_session sent back " << sent_bytes << " bytes" << std::endl;

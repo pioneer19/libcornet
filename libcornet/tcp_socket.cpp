@@ -229,46 +229,74 @@ auto TcpSocket::poll_write_event()
     return Awaiter{*m_poller_cb};
 }
 
-coroutines::CoroutineAwaiter<ssize_t> TcpSocket::try_async_read( void* buffer, size_t buffer_size )
+coroutines::CoroutineAwaiter<ssize_t> TcpSocket::try_async_read( void* buffer, uint32_t buffer_size )
 {
-#if defined(USE_IO_URING)
-    ssize_t bytes_read = co_await NetUring::instance().async_read( m_socket_fd, buffer, buffer_size );
-#else
-    ssize_t bytes_read = ::recv( m_socket_fd, buffer, buffer_size, MSG_DONTWAIT );
-    if( bytes_read == -1 )
-        bytes_read = -errno;
-#endif
-    if( bytes_read < 0 )
+    ssize_t bytes_read = 0;
+    while( true )
     {
-        if( bytes_read == EAGAIN || errno == EWOULDBLOCK )
-            m_poller_cb->reset_bits( EPOLLIN );
-        else
-            throw std::system_error(
-                    errno, std::system_category()
-                    ,std::string("failed NetUring::instance().try_async_read: ")
-                     +strerror( -bytes_read ) );
+#if defined(USE_IO_URING)
+        bytes_read = co_await NetUring::instance().async_read( m_socket_fd, buffer, buffer_size );
+#else
+        ssize_t bytes_read = ::recv( m_socket_fd, buffer, buffer_size, MSG_DONTWAIT );
+        if( bytes_read == -1 )
+            bytes_read = -errno;
+#endif
+        if( bytes_read == -EINTR )
+            continue;
+        break;
     }
-    if( bytes_read > 0 && static_cast<size_t>(bytes_read) < buffer_size )
+    if( bytes_read < buffer_size )
         m_poller_cb->reset_bits( EPOLLIN );
 
     co_return bytes_read;
 }
-coroutines::CoroutineAwaiter<ssize_t> TcpSocket::async_read( void* buffer, uint32_t buffer_size )
+
+coroutines::CoroutineAwaiter<ssize_t> TcpSocket::async_read(
+        void* buffer, uint32_t buffer_size, uint32_t min_threshold )
 {
+    assert( buffer_size >= min_threshold );
+
+    uint32_t total_read = 0;
     // if read get less bytes then asked, EPOLLIN will be reset
     // but if previous read got exactly asked bytes, socket will be empty,
     // but EPOLLIN will be set
     if( m_poller_cb->events_mask & EPOLLIN )
     { // previous read probably did not get all data, so will try to read
         ssize_t bytes_read = co_await try_async_read( buffer, buffer_size );
-
         // 0 means socket was actually empty so we need to epoll
-        // -1 or >0 means error or some data read, so we do not need to epoll
-        if( bytes_read >= 0 )
-            co_return bytes_read;
+        // -1 or >0 means error or some data read
+        if( bytes_read > 0 )
+            total_read = bytes_read;
+        else if( bytes_read < 0 )
+            if( bytes_read == -EAGAIN || bytes_read == -EWOULDBLOCK )
+                total_read = 0;
+            else
+                throw std::system_error(
+                        -bytes_read, std::system_category()
+                        ,std::string("failed TcpSocket::async_read(): ")
+                         +strerror( -bytes_read ) );
+        else // bytes_read == 0
+            co_return 0;
     }
-    co_await ready_read();
-    co_return co_await try_async_read( buffer, buffer_size );
+    while( total_read < min_threshold )
+    {
+        co_await ready_read();
+        ssize_t bytes_read = co_await try_async_read( (uint8_t*)buffer+total_read
+                                                      , buffer_size-total_read );
+        if( bytes_read > 0 )
+            total_read += bytes_read;
+        else if( bytes_read < 0 )
+            if( bytes_read == -EAGAIN || bytes_read == -EWOULDBLOCK )
+                continue;
+            else
+                throw std::system_error(
+                        -bytes_read, std::system_category()
+                        ,std::string("failed TcpSocket::async_read() in while: ")
+                         +strerror( -bytes_read ) );
+        else // bytes_read == 0
+            break;
+    }
+    co_return total_read;
 }
 
 coroutines::CoroutineAwaiter<ssize_t> TcpSocket::try_async_write( const void* buffer, size_t buffer_size )

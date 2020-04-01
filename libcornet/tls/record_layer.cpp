@@ -119,7 +119,8 @@ coroutines::CoroutineAwaiter<void> RecordLayer::read_full_record_skip_change_cip
     }
 }
 
-coroutines::CoroutineAwaiter<uint32_t> RecordLayer::async_read( void* user_buffer, uint32_t buffer_size )
+coroutines::CoroutineAwaiter<uint32_t> RecordLayer::async_read(
+        void* user_buffer, uint32_t buffer_size, uint32_t min_threshold )
 {
     uint32_t bytes_copied = 0;
     // conserved data will contain previously decrypted but not fully read data
@@ -138,7 +139,7 @@ coroutines::CoroutineAwaiter<uint32_t> RecordLayer::async_read( void* user_buffe
         }
     }
 
-    while( bytes_copied < buffer_size )
+    while( bytes_copied < min_threshold )
     {
         auto full_record_size = co_await read_and_decrypt_record();
         std::cout << "RecordLayer::async_read() read_and_decrypt_record() returns "
@@ -164,17 +165,13 @@ coroutines::CoroutineAwaiter<uint32_t> RecordLayer::async_read( void* user_buffe
                                             ,content_size - (buffer_size-bytes_copied)
                                             ,full_record_size
                                             -(sizeof(record::TlsPlaintext)+content_size) );
-                    co_return buffer_size;
+                    bytes_copied = buffer_size;
                 } else {
                     std::copy_n( m_read_buffer.head() + sizeof(record::TlsPlaintext)
                                  , content_size
                                  , (uint8_t*)user_buffer+bytes_copied );
                     bytes_copied += content_size;
                     m_read_buffer.consume( full_record_size );
-                    // FIXME: async_read need to notify someway that no new network records
-                    // currently without this co_return async_read will wait until user buffer become full,
-                    // but with this co_return async_read will read single record
-                    co_return bytes_copied;
                 }
                 break;
             }

@@ -37,7 +37,7 @@ coroutines::CommonCoroutine async_session( net::Poller& poller, const char* host
 
     auto sent_bytes = co_await client.async_write( buff, sizeof(buff)-1 );
     std::cout << "socket sent      " << sent_bytes << " bytes" << std::endl;
-    auto read_bytes = co_await client.async_read(  buff, sent_bytes );
+    auto read_bytes = co_await client.async_read( buff, sent_bytes );
     std::cout << "socket read back " << read_bytes << " bytes" << std::endl;
     client.close();
 

@@ -54,7 +54,15 @@ public:
     [[nodiscard]]
     coroutines::CoroutineAwaiter<bool>     tls_connect( Poller& poller, const char* hostname, uint16_t port
             , const std::string& sni );
-    coroutines::CoroutineAwaiter<uint32_t> async_read( void* user_buffer, uint32_t buffer_size );
+    /**
+     * receive data from Tls socket to buffer until got minimum min_threshold bytes, buffer_size is max threshold
+     * @param buffer buffer for data
+     * @param buffer_size max data size to read
+     * @param min_threshold min data_size to red
+     * @return received data size
+     */
+    coroutines::CoroutineAwaiter<uint32_t> async_read(
+            void* user_buffer, uint32_t buffer_size, uint32_t min_threshold = 1 );
     coroutines::CoroutineAwaiter<void>     async_write( const void* buffer, uint32_t buffer_size );
 
     RecordLayer( const RecordLayer& )       = delete;

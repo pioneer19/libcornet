@@ -67,7 +67,20 @@ public:
     [[nodiscard]]
     coroutines::CoroutineAwaiter<bool> async_connect( Poller& poller, const char* hostname, uint16_t port );
 
-    coroutines::CoroutineAwaiter<ssize_t> async_read( void* buffer, uint32_t buffer_size );
+    /**
+     * receive data from tcp socket to buffer until got min_threshold bytes, buffer_size is max threshold
+     *
+     * This call will read data in size range [min_threshold, buffer_size].
+     * If received data less then min_threshold - error occurred and no data can be read in next call.
+     * If returned value is less 0 - this value is "-errno".
+     * With min_threshold = 0 async_read will try to read once and return.
+     * @param buffer buffer for data
+     * @param buffer_size max data size to read
+     * @param min_threshold min data_size to red
+     * @return received data size
+     */
+    coroutines::CoroutineAwaiter<ssize_t> async_read( void* buffer, uint32_t buffer_size
+            , uint32_t min_threshold = 1 );
     coroutines::CoroutineAwaiter<ssize_t> async_write( const void* buffer, uint32_t buffer_size );
     TcpSocket::ReadVAwaiter async_readv( iovec *iov, uint32_t iovcnt );
 
@@ -92,7 +105,7 @@ private:
      */
     auto poll_write_event();
     coroutines::CoroutineAwaiter<int>     try_async_accept(  sockaddr_in6* peer_addr );
-    coroutines::CoroutineAwaiter<ssize_t> try_async_read(  void* buffer, size_t buffer_size );
+    coroutines::CoroutineAwaiter<ssize_t> try_async_read(  void* buffer, uint32_t buffer_size );
     coroutines::CoroutineAwaiter<ssize_t> try_async_write( const void* buffer, size_t buffer_size );
 
     std::unique_ptr<PollerCb> m_poller_cb;
