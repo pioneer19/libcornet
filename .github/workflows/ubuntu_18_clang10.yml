@@ -1,4 +1,4 @@
-name: clang-9 on ubuntu-18.04
+name: clang 10 on ubuntu-18.04
 
 on: [push]
 
@@ -8,9 +8,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: install clang-9
+    - name: install clang-10
       run: |
-        sudo apt update && sudo apt install -y clang-9 libc++-9-dev libc++abi-9-dev \
+        wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+        sudo bash -c 'echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main" > /etc/apt/sources.list.d/llvm-10.list'
+        sudo apt update && sudo apt install -y clang-10 libc++-10-dev libc++abi-10-dev \
             && sudo apt autoremove -y --purge
 
     - name: install build2
@@ -25,7 +27,8 @@ jobs:
     - name: build
       run: |
         b --version
-        bdep --no-progress init -C ../libcornet-clang @clang cc config.cxx=clang++-9 \
+        bdep --no-progress init -C ../libcornet-clang @clang cc config.cxx=clang++-10 \
+            config.c=clang-10 \
             config.cc.coptions="-g -O2 -Wall -Wextra -pedantic -march=native -mtune=native" \
             config.cc.loptions=-lcrypto \
             config.cxx.coptions=-stdlib=libc++ \
