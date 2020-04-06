@@ -21,6 +21,7 @@
 
 #include <experimental/coroutine>
 
+#include <libcornet/promise_list.hpp>
 #include <libcornet/guards.hpp>
 
 namespace pioneer19::coroutines
@@ -182,6 +183,40 @@ struct CommonCoroutine
         void unhandled_exception() { std::terminate(); }
         void return_void() {}
     };
+};
+
+struct LinkedCoroutine
+{
+    struct promise_type;
+    using List = PromiseList<promise_type>;
+    using Node = PromiseNode<promise_type>;
+
+    using coro_handler = std::experimental::coroutine_handle<promise_type>;
+    struct promise_type : public Node
+    {
+        std::experimental::suspend_never initial_suspend() { return {}; }
+        std::experimental::suspend_never final_suspend()   { return {}; }
+        coro_handler get_return_object() { return coro_handler::from_promise(*this); }
+        void unhandled_exception() { std::terminate(); }
+        void return_void() {}
+    };
+
+    LinkedCoroutine( coro_handler coro ) noexcept
+            :coro{ coro }
+    {}
+    LinkedCoroutine( LinkedCoroutine&& other ) noexcept :coro{other.coro} {}
+    LinkedCoroutine& operator=( LinkedCoroutine&& other ) noexcept
+    { coro = other.coro; return *this; }
+    ~LinkedCoroutine() = default;
+    coro_handler coro;
+
+    void link_promise( List& list )
+    {
+        list.push_front( &coro.promise() );
+    }
+    LinkedCoroutine() = delete;
+    LinkedCoroutine( const LinkedCoroutine& ) = delete;
+    LinkedCoroutine& operator=( const LinkedCoroutine& ) = delete;
 };
 
 }

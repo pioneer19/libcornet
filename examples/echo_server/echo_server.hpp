@@ -28,8 +28,8 @@
 struct EchoSession
 {
     struct promise_type;
-    using PromiseList = pioneer19::cornet::PromiseList<promise_type>;
-    using PromiseNode = pioneer19::cornet::PromiseNode<promise_type>;
+    using PromiseList = pioneer19::coroutines::PromiseList<promise_type>;
+    using PromiseNode = pioneer19::coroutines::PromiseNode<promise_type>;
 
     using coro_handler = std::experimental::coroutine_handle<promise_type>;
     struct promise_type : public PromiseNode
@@ -101,7 +101,7 @@ private:
     EchoServerRunner create_runner();
 
     pioneer19::cornet::Poller& m_poller;
-    pioneer19::cornet::PromiseList<EchoSession::promise_type> m_session_list;
+    pioneer19::coroutines::PromiseList<EchoSession::promise_type> m_session_list;
     pioneer19::cornet::TcpSocket m_server_socket;
     EchoServerRunner m_runner;
 };

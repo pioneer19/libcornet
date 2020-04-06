@@ -396,7 +396,7 @@ TlsConnector::read_server_finished_record( RecordLayer& record_layer, crypto::Tl
         throw std::runtime_error(
                 "TlsConnector::read_encrypted_extensions_record() got unexpected handshake record "
                 + std::to_string( static_cast<uint8_t>(handshake_type) )
-                + "expected " + std::to_string( static_cast<uint8_t>(expected_handshake_type) ) );
+                + " expected " + std::to_string( static_cast<uint8_t>(expected_handshake_type) ) );
     }
 
     ServerFinishedHook finished_hook{&tls_handshake};

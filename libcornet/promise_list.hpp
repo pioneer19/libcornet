@@ -19,7 +19,7 @@
 
 #pragma once
 
-namespace pioneer19::cornet
+namespace pioneer19::coroutines
 {
 
 template<typename PromiseType>
