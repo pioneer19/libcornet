@@ -1,4 +1,5 @@
-./: { libcornet/ examples/ mem_writer/ tests/ benchmarks/ } manifest
+./: { libcornet/ examples/ mem_writer/ tests/ benchmarks/ helpers/ } manifest
 
-tests/: install = false
+tests/:    install = false
 examples/: install = false
+helpers/:  install = false

@@ -1,0 +1,5 @@
+project = libcornet_helpers
+
+using config
+using test
+using dist

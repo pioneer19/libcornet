@@ -1,0 +1,3 @@
+./: {*/ -build/}
+
+#cc.poptions =+ "-I$src_root/examples/some_dir"
