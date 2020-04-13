@@ -37,13 +37,13 @@ coroutines::CommonCoroutine run_server( net::Poller& poller, const char* ip_addr
     std::unique_ptr<net::tls13::SingleDomainKeyStore> key_store { new net::tls13::SingleDomainKeyStore(
             SNI_HOSTNAME, "./key.pem", "./cert.pem", "./cert_chain.pem" ) };
 
-    for( size_t i = 0; i < session_count; ++i ) // infinite for session_count == 0
+    for( size_t i = 0; session_count==0 || i < session_count; ++i ) // infinite for session_count == 0
     {
         net::tls13::TlsSocket client_socket = co_await tls_socket.async_accept(
                 poller, nullptr, key_store.get() );
         printf( "tls server got connected socket, (count=%lu)\n", i );
 
-        auto session = run_session( std::move( client_socket ));
+        auto session = run_session( std::move( client_socket ) );
         session.link_promise( tls_sessions_list );
     }
     // FIXME: close server socket and co_await while tls_session_list become empty

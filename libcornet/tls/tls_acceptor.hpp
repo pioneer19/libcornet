@@ -7,47 +7,12 @@
 
 #pragma once
 
-#include <string>
-
-#include <libcornet/tls/parser.hpp>
-#include <libcornet/tls/tls_read_buffer.hpp>
-#include <libcornet/tls/record_layer.hpp>
-#include <libcornet/tls/key_store.hpp>
-#include <libcornet/tls/crypto/record_cryptor.hpp>
-
-#include <libcornet/coroutines_utils.hpp>
+#include <libcornet/tls/tls_acceptor_template.hpp>
+#include <libcornet/production_seams.hpp>
 
 namespace pioneer19::cornet::tls13
 {
 
-/**
- * @brief helper functions to process tls handshake on server side
- */
-class TlsAcceptor
-{
-public:
-    TlsAcceptor() = delete;
-    TlsAcceptor( const TlsAcceptor& ) = delete;
-    TlsAcceptor( TlsAcceptor&& ) = delete;
-    TlsAcceptor& operator=( TlsAcceptor&& ) = delete;
-    TlsAcceptor& operator=( const TlsAcceptor& ) = delete;
-    ~TlsAcceptor() = default;
-
-    static coroutines::CoroutineAwaiter<bool> read_client_hello_record(
-            RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake,
-            record::Parser& parser, KeyStore* domain_keys_store );
-    static coroutines::CoroutineAwaiter<bool> read_client_finished_record(
-            RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake, record::Parser& parser );
-
-    static uint32_t produce_server_hello_record( TlsReadBuffer& buffer, crypto::TlsHandshake& tls_handshake );
-    static uint32_t produce_encrypted_extensions_record(
-            TlsReadBuffer& buffer, crypto::TlsHandshake& tls_handshake );
-    static uint32_t produce_certificate_record(
-            TlsReadBuffer& buffer, crypto::TlsHandshake& tls_handshake );
-    static uint32_t produce_certificate_verify_record(
-            TlsReadBuffer& buffer, crypto::TlsHandshake& tls_handshake );
-    static uint32_t produce_server_finished_record(
-            TlsReadBuffer& buffer, crypto::TlsHandshake& tls_handshake );
-};
+using TlsAcceptor = TlsAcceptorImpl<PRODUCTION_OS_SEAM>;
 
 }

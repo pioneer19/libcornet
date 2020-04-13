@@ -58,7 +58,8 @@ public:
 
 private:
     friend class TlsConnector;
-    friend class TlsAcceptor;
+    template<typename T>
+    friend class TlsAcceptorImpl;
 
     uint16_t decrypt_record( uint8_t* buffer, crypto::RecordCryptor& cryptor );
 
