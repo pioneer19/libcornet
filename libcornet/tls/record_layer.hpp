@@ -57,7 +57,8 @@ public:
     RecordLayer& operator=( const RecordLayer& ) = delete;
 
 private:
-    friend class TlsConnector;
+    template<typename T>
+    friend class TlsConnectorImpl;
     template<typename T>
     friend class TlsAcceptorImpl;
 
