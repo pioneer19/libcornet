@@ -14,8 +14,6 @@
 namespace pioneer19::cornet::tls13
 {
 
-class RecordLayer;
-
 /**
  * @brief helpers to create tls network records
  */
