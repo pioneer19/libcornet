@@ -5,42 +5,74 @@
  * This file is part of libcornet (https://github.com/pioneer19/libcornet).
  */
 
-#include <echo_server/echo_server.hpp>
+#include <unistd.h>
 
-#include <iostream>
+#include <cstdio>
 
-#include <libcornet/poller.hpp>
 #include <libcornet/tcp_socket.hpp>
-
+#include <libcornet/poller.hpp>
 namespace net = pioneer19::cornet;
 
-EchoSession create_echo_session( pioneer19::cornet::TcpSocket tcp_socket )
-{
-    char buff[1024];
+#include <libcornet/coroutines_utils.hpp>
+namespace coroutines = pioneer19::coroutines;
 
-    auto read_bytes = co_await tcp_socket.async_read( buff, sizeof( buff ) );
-    std::cout << "echo_session read      " << read_bytes << " bytes" << std::endl;
-    auto sent_bytes = co_await tcp_socket.async_write( buff, read_bytes );
-    std::cout << "echo_session sent back " << sent_bytes << " bytes" << std::endl;
-    tcp_socket.close();
+coroutines::LinkedCoroutine create_session( net::TcpSocket tcp_socket )
+{
+    uint8_t buffer[1024];
+    auto bytes_read = co_await tcp_socket.async_read( buffer, sizeof(buffer) );
+    printf( "echo server read %ld bytes from client socket\n", bytes_read );
+    ssize_t bytes_sent = co_await tcp_socket.async_write( buffer, bytes_read );
+    printf( "echo_session sent back %ld bytes\n", bytes_sent );
 }
 
-EchoServerRunner EchoServer::create_runner()
+coroutines::CommonCoroutine run_server( net::Poller& poller, const char* ip_address, size_t session_count )
 {
-    while( true )
+    net::TcpSocket tcp_socket{};
+    tcp_socket.bind( ip_address, 10000 );
+    tcp_socket.listen( poller );
+    printf( "tcp server listening...\n" );
+
+    coroutines::LinkedCoroutine::List tls_sessions_list;
+
+    for( size_t i = 0; session_count==0 || i < session_count; ++i ) // infinite for session_count == 0
     {
-        sockaddr_in6 peer_addr;
-        net::TcpSocket client = co_await m_server_socket.async_accept( m_poller, &peer_addr );
-        std::cout << "EchoServer::create_runner() got tcp socket\n";
+        net::TcpSocket client_socket = co_await tcp_socket.async_accept( poller, nullptr );
+        printf( "echo server got connected socket, (count=%lu)\n", i );
 
-        auto session = create_echo_session( std::move( client ) );
-        session.add_to_list( m_session_list );
+        auto session = create_session( std::move( client_socket ) );
+        session.link_promise( tls_sessions_list );
+        session.start();
     }
+    // FIXME: close server socket and co_await while tls_session_list become empty
+
+    poller.stop();
 }
 
-EchoServer::EchoServer( pioneer19::cornet::Poller& poller )
-    :m_poller( poller )
+int main( int argc, char *argv[] )
 {
-    m_server_socket.bind( "::1", 10000 );
-    m_server_socket.listen( poller );
+    size_t session_limit = 0; // 0 - is unlimited
+    try
+    {
+        if( argc >= 2 )
+            session_limit = std::stoul( argv[1] );
+    }
+    catch( const std::exception& ex )
+    {
+        printf( "failed convert first argument \"%s\" to number\n"
+                "usage: %s session_count\n", argv[1], argv[0] );
+        ::exit(EXIT_FAILURE );
+    }
+
+    printf( "Polling echo server (single thread)\n" );
+
+    net::Poller poller;
+
+    auto coro = run_server( poller, "::1", session_limit );
+
+    poller.run_on_signal( SIGINT, [&coro,&poller](){ coro.stop(); poller.stop();} );
+    poller.run_on_signal( SIGHUP, [&coro,&poller](){ coro.stop(); poller.stop();} );
+    //poller.run_on_signal( SIGINT, [](){puts("SIGQUIT");} );
+    poller.run();
+
+    return 0;
 }

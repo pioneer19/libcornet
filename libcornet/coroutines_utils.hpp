@@ -173,6 +173,27 @@ struct CommonCoroutine
     };
 };
 
+/**
+ * coroutine which will run some actions and self destroyed
+ *
+ * It's promise linked in non intrusive list to destroy unfinished coroutines
+ * on program exit or other reasons
+ * @code{.cpp}
+ * coroutines::LinkedCoroutine create_session( net::TcpSocket tcp_socket )
+ * {
+ *     uint8_t buffer[1024];
+ *     auto bytes_read = co_await tcp_socket.async_read( buffer, sizeof(buffer) );
+ *     auto bytes_sent = co_await tcp_socket.async_write( buffer, bytes_read );
+ * }
+ * void server()
+ * {
+ *     net::TcpSocket client_socket = co_await tcp_socket.async_accept( poller, nullptr );
+ *     auto session = create_session( std::move( client_socket ) ); // coroutine will stop on initial_suspend
+ *     session.link_promise( tls_sessions_list );                   // then linked in list
+ *     session.start();                                             // then continue running
+ * }
+ * @endcode
+ */
 struct LinkedCoroutine
 {
     struct promise_type;
@@ -182,8 +203,8 @@ struct LinkedCoroutine
     using coro_handler = std::experimental::coroutine_handle<promise_type>;
     struct promise_type : public Node
     {
-        std::experimental::suspend_never initial_suspend() { return {}; }
-        std::experimental::suspend_never final_suspend()   { return {}; }
+        std::experimental::suspend_always initial_suspend() { return {}; }
+        std::experimental::suspend_never  final_suspend()   { return {}; }
         coro_handler get_return_object() { return coro_handler::from_promise(*this); }
         void unhandled_exception() { std::terminate(); }
         void return_void() {}
@@ -198,10 +219,8 @@ struct LinkedCoroutine
     ~LinkedCoroutine() = default;
     coro_handler coro;
 
-    void link_promise( List& list )
-    {
-        list.push_front( &coro.promise() );
-    }
+    void link_promise( List& list ) const { list.push_front( &coro.promise() ); }
+    void start() { coro.resume(); }
     LinkedCoroutine() = delete;
     LinkedCoroutine( const LinkedCoroutine& ) = delete;
     LinkedCoroutine& operator=( const LinkedCoroutine& ) = delete;
