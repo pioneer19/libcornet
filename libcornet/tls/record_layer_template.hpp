@@ -17,6 +17,7 @@
 #include <libcornet/tls/parser.hpp>
 #include <libcornet/tls/key_store.hpp>
 #include <libcornet/coroutines_utils.hpp>
+#include <libcornet/log_level.hpp>
 
 namespace pioneer19::cornet::tls13
 {
@@ -25,7 +26,7 @@ class TlsSocket;
 /**
  * @brief Low level state machine for reading and writing tls records
  */
-template< typename OS_SEAM >
+template< typename OS_SEAM, LogLevel LOG_LEVEL=LogLevel::NONE >
 class RecordLayerImpl
 {
 public:
@@ -58,9 +59,9 @@ public:
     RecordLayerImpl& operator=( const RecordLayerImpl& ) = delete;
 
 private:
-    template<typename T>
+    template<typename T, LogLevel >
     friend class TlsConnectorImpl;
-    template<typename T>
+    template<typename T, LogLevel >
     friend class TlsAcceptorImpl;
 
     uint16_t decrypt_record( uint8_t* buffer, crypto::RecordCryptor& cryptor );
@@ -84,8 +85,8 @@ private:
     crypto::RecordCryptor m_cryptor;
 };
 
-template< typename OS_SEAM >
-void RecordLayerImpl<OS_SEAM>::create_application_traffic_cryptor(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+void RecordLayerImpl<OS_SEAM,LOG_LEVEL>::create_application_traffic_cryptor(
         crypto::TlsHandshake& tls_handshake,
         const uint8_t* server_finished_transcript_hash,
         const uint8_t* client_finished_transcript_hash,

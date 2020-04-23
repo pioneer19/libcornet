@@ -141,8 +141,8 @@ void ClientHelloHook::signature_scheme( record::SignatureScheme scheme )
         signature_schemes[signature_schemes_count++] = scheme;
     }
 }
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<bool> TlsAcceptorImpl<OS_SEAM>::read_client_hello_record(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<bool> TlsAcceptorImpl<OS_SEAM,LOG_LEVEL>::read_client_hello_record(
         RecordLayer& record_layer,
         crypto::TlsHandshake& tls_handshake,
         record::Parser& parser, KeyStore* domain_keys_store )
@@ -150,7 +150,9 @@ coroutines::CoroutineAwaiter<bool> TlsAcceptorImpl<OS_SEAM>::read_client_hello_r
     TlsReadBuffer& read_buffer = record_layer.m_read_buffer;
 
     co_await record_layer.read_full_record_skip_change_cipher_spec(); // FIXME: check result
-    record::print_net_record( read_buffer.head(), read_buffer.size() );
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        record::print_net_record( read_buffer.head(), read_buffer.size() );
+
     auto encrypted_record_size = record::full_record_size( read_buffer.head() );
 
     if( ! record::is_handshake_record( read_buffer.head() ) )
@@ -213,8 +215,8 @@ bool ClientFinishedHook::commit()
     return true;
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<bool> TlsAcceptorImpl<OS_SEAM>::read_client_finished_record(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<bool> TlsAcceptorImpl<OS_SEAM,LOG_LEVEL>::read_client_finished_record(
         RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake, record::Parser& parser )
 {
     TlsReadBuffer& read_buffer = record_layer.m_read_buffer;
@@ -243,15 +245,16 @@ coroutines::CoroutineAwaiter<bool> TlsAcceptorImpl<OS_SEAM>::read_client_finishe
 
     co_return true;
 }
-template< typename OS_SEAM >
-uint32_t TlsAcceptorImpl<OS_SEAM>::produce_server_hello_record(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+uint32_t TlsAcceptorImpl<OS_SEAM,LOG_LEVEL>::produce_server_hello_record(
         TlsReadBuffer& buffer, crypto::TlsHandshake& tls_handshake )
 {
 //    auto server_hello_record_size = RecordHelpers::server_hello_record_buffer_size(
 //                record_layer, tls_handshake );
 
     auto server_hello_record_size = RecordHelpers::create_server_hello_record( tls_handshake, buffer.tail());
-    record::print_net_record( buffer.tail(), server_hello_record_size );
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        record::print_net_record( buffer.tail(), server_hello_record_size );
 
     tls_handshake.add_message( record::handshake_message( buffer.tail() )
                                ,record::record_content_size( buffer.tail() ) );
@@ -262,13 +265,14 @@ uint32_t TlsAcceptorImpl<OS_SEAM>::produce_server_hello_record(
     return server_hello_record_size;
 }
 
-template< typename OS_SEAM >
-uint32_t TlsAcceptorImpl<OS_SEAM>::produce_encrypted_extensions_record(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+uint32_t TlsAcceptorImpl<OS_SEAM,LOG_LEVEL>::produce_encrypted_extensions_record(
         TlsReadBuffer& buffer, crypto::TlsHandshake& tls_handshake )
 {
     auto encrypted_extensions_record_size = RecordHelpers::create_encrypted_extensions_record(
             tls_handshake, buffer.tail() );
-    record::print_net_record( buffer.tail(), encrypted_extensions_record_size );
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        record::print_net_record( buffer.tail(), encrypted_extensions_record_size );
 
     tls_handshake.add_message( record::handshake_message( buffer.tail() )
                                ,record::record_content_size( buffer.tail() ) );
@@ -281,12 +285,13 @@ uint32_t TlsAcceptorImpl<OS_SEAM>::produce_encrypted_extensions_record(
     return encrypted_size;
 }
 
-template< typename OS_SEAM >
-uint32_t TlsAcceptorImpl<OS_SEAM>::produce_certificate_record(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+uint32_t TlsAcceptorImpl<OS_SEAM,LOG_LEVEL>::produce_certificate_record(
         TlsReadBuffer& buffer, crypto::TlsHandshake& tls_handshake )
 {
     auto certificate_record_size = RecordHelpers::create_certificate_record( tls_handshake, buffer.tail() );
-    record::print_net_record( buffer.tail(), certificate_record_size );
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        record::print_net_record( buffer.tail(), certificate_record_size );
 
     tls_handshake.add_message( record::handshake_message( buffer.tail() )
                                ,record::record_content_size( buffer.tail() ) );
@@ -300,13 +305,14 @@ uint32_t TlsAcceptorImpl<OS_SEAM>::produce_certificate_record(
     return encrypted_size;
 }
 
-template< typename OS_SEAM >
-uint32_t TlsAcceptorImpl<OS_SEAM>::produce_certificate_verify_record(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+uint32_t TlsAcceptorImpl<OS_SEAM,LOG_LEVEL>::produce_certificate_verify_record(
         TlsReadBuffer& buffer, crypto::TlsHandshake& tls_handshake )
 {
     auto certificate_verify_record_size = RecordHelpers::create_certificate_verify_record(
             tls_handshake, buffer.tail() );
-    record::print_net_record( buffer.tail(), certificate_verify_record_size );
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        record::print_net_record( buffer.tail(), certificate_verify_record_size );
 
     tls_handshake.add_message( record::handshake_message( buffer.tail() )
                                ,record::record_content_size( buffer.tail() ) );
@@ -319,13 +325,14 @@ uint32_t TlsAcceptorImpl<OS_SEAM>::produce_certificate_verify_record(
     return encrypted_size;
 }
 
-template< typename OS_SEAM >
-uint32_t TlsAcceptorImpl<OS_SEAM>::produce_server_finished_record(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+uint32_t TlsAcceptorImpl<OS_SEAM,LOG_LEVEL>::produce_server_finished_record(
         TlsReadBuffer& buffer, crypto::TlsHandshake& tls_handshake )
 {
     auto finished_record_size = RecordHelpers::create_server_finished_record(
             tls_handshake, buffer.tail() );
-    record::print_net_record( buffer.tail(), finished_record_size );
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        record::print_net_record( buffer.tail(), finished_record_size );
 
     tls_handshake.add_message( record::handshake_message( buffer.tail() )
                                ,record::record_content_size( buffer.tail() ) );

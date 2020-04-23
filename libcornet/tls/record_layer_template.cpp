@@ -24,8 +24,6 @@
 
 #include <libcornet/cache_allocator.hpp>
 
-#include <iostream>
-
 namespace pioneer19::cornet::tls13
 {
 
@@ -37,12 +35,15 @@ static bool is_full_record_in_buffer( const uint8_t* buffer, uint32_t buffer_siz
     return buffer_size >= ( tls_record->length() + sizeof(record::TLSCiphertext) );
 }
 
-template< typename OS_SEAM >
-uint16_t RecordLayerImpl<OS_SEAM>::decrypt_record( uint8_t* buffer, crypto::RecordCryptor& cryptor )
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+uint16_t RecordLayerImpl<OS_SEAM,LOG_LEVEL>::decrypt_record( uint8_t* buffer, crypto::RecordCryptor& cryptor )
 {
     auto bytes_decrypted = cryptor.decrypt_record(
             buffer, buffer + sizeof( record::TLSCiphertext ) );
-    std::cout << "RecordLayer::tls_connect decrypted " << bytes_decrypted << " bytes\n";
+
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        printf( "RecordLayer::tls_connect decrypted %u bytes\n", bytes_decrypted );
+
     if( bytes_decrypted == 0 )
         std::runtime_error( "RecordLayer::tls_connect failed decrypt record" );
     /*
@@ -66,8 +67,8 @@ uint16_t RecordLayerImpl<OS_SEAM>::decrypt_record( uint8_t* buffer, crypto::Reco
     return bytes_decrypted;
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM>::read_full_record()
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::read_full_record()
 {
     if( !is_full_record_in_buffer( m_read_buffer.head(), m_read_buffer.size() ) )
     {
@@ -93,8 +94,9 @@ coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM>::read_full_record()
     }
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM>::read_full_record_skip_change_cipher_spec()
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<void>
+        RecordLayerImpl<OS_SEAM,LOG_LEVEL>::read_full_record_skip_change_cipher_spec()
 {
     while( true )
     {
@@ -110,8 +112,8 @@ coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM>::read_full_record_sk
     }
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM>::async_read(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::async_read(
         void* user_buffer, uint32_t buffer_size, uint32_t min_threshold )
 {
     uint32_t bytes_copied = 0;
@@ -134,8 +136,8 @@ coroutines::CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM>::async_read(
     while( bytes_copied < min_threshold )
     {
         auto full_record_size = co_await read_and_decrypt_record();
-        std::cout << "RecordLayer::async_read() read_and_decrypt_record() returns "
-                  << full_record_size << " bytes\n";
+        if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+            printf( "RecordLayer::async_read() read_and_decrypt_record() returns %u bytes\n", full_record_size );
 
         switch( record::record_content_type( m_read_buffer.head() ) )
         {
@@ -177,37 +179,50 @@ coroutines::CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM>::async_read(
     co_return bytes_copied;
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter <uint32_t> RecordLayerImpl<OS_SEAM>::read_and_decrypt_record()
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter <uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::read_and_decrypt_record()
 {
     co_await read_full_record();
 
-    record::print_net_record( m_read_buffer.head(), m_read_buffer.size() );
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        record::print_net_record( m_read_buffer.head(), m_read_buffer.size() );
+
     auto encrypted_record_size = record::full_record_size( m_read_buffer.head() );
-    std::cout << "read_and_decrypt_record full record size " << encrypted_record_size << "\n";
+
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        printf( "read_and_decrypt_record full record size %u\n", encrypted_record_size );
     // FIXME: record MUST be encrypted
     if( record::record_content_type( m_read_buffer.head() ) == record::ContentType::APPLICATION_DATA )
     {
         decrypt_record( m_read_buffer.head(), m_cryptor );
-        std::cout << "decrypted record\n";
-        record::print_net_record( m_read_buffer.head(), m_read_buffer.size() );
+        if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        {
+            printf( "decrypted record\n" );
+            record::print_net_record( m_read_buffer.head(), m_read_buffer.size());
+        }
     }
 
     co_return encrypted_record_size;
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM>::read_record_decrypt_and_skip_change_cipher()
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<uint32_t>
+        RecordLayerImpl<OS_SEAM,LOG_LEVEL>::read_record_decrypt_and_skip_change_cipher()
 {
     uint32_t encrypted_record_size = 0;
     while( true )
     {
         co_await read_full_record_skip_change_cipher_spec();
 
-        record::print_net_record( m_read_buffer.head(), m_read_buffer.size());
+        if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+            record::print_net_record( m_read_buffer.head(), m_read_buffer.size());
         encrypted_record_size = record::full_record_size( m_read_buffer.head());
 
-        printf( "read_record_decrypt_and_skip_change_cipher() enc. record size %u\n", encrypted_record_size );
+        if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        {
+            printf( "read_record_decrypt_and_skip_change_cipher() enc. record size %u\n"
+                    , encrypted_record_size );
+        }
         if( record::record_content_type( m_read_buffer.head() ) != record::ContentType::APPLICATION_DATA )
         {
             throw std::runtime_error(
@@ -217,8 +232,11 @@ coroutines::CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM>::read_record_dec
         }
 
         decrypt_record( m_read_buffer.head(), m_cryptor );
-        printf( "decrypted record\n" );
-        record::print_net_record( m_read_buffer.head(), m_read_buffer.size());
+        if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        {
+            printf( "decrypted record\n" );
+            record::print_net_record( m_read_buffer.head(), m_read_buffer.size() );
+        }
 
         if( record::record_content_type( m_read_buffer.head()) == record::ContentType::CHANGE_CIPHER_SPEC )
             m_read_buffer.consume( encrypted_record_size );
@@ -229,8 +247,8 @@ coroutines::CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM>::read_record_dec
     co_return encrypted_record_size;
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter <uint32_t> RecordLayerImpl<OS_SEAM>::async_write_buffer()
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter <uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::async_write_buffer()
 {
     uint32_t bytes_sent = 0;
     while( bytes_sent < m_write_buffer.size() )
@@ -246,15 +264,18 @@ coroutines::CoroutineAwaiter <uint32_t> RecordLayerImpl<OS_SEAM>::async_write_bu
 
     co_return bytes_sent;
 }
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM>::encrypt_and_send_record(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::encrypt_and_send_record(
         const void* buffer, uint32_t chunk_size )
 {
     uint8_t* record = m_write_buffer.tail();
 
     auto rec_size = m_cryptor.encrypt_record( record, (const uint8_t*)buffer, chunk_size );
-    std::cout << "encrypted record size " << rec_size << "\n";
-    record::print_net_record( record, rec_size );
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+    {
+        printf( "encrypted record size %u\n", rec_size );
+        record::print_net_record( record, rec_size );
+    }
     m_write_buffer.produce( rec_size );
 
     auto bytes_sent = co_await async_write_buffer();
@@ -263,8 +284,8 @@ coroutines::CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM>::encrypt_and_sen
     co_return rec_size;
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM>::encrypt_and_send_application_data(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::encrypt_and_send_application_data(
         const void* buffer, uint32_t chunk_size )
 {
     assert( chunk_size <= 16 * 1024 ); // TlsPlaintext payload limit
@@ -275,11 +296,12 @@ coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM>::encrypt_and_send_ap
     tls_plaintext_record->finalize( chunk_size );
 
     auto rec_size = co_await encrypt_and_send_record( buffer, chunk_size );
-    std::cout << "RecordLayer::async_write wrote " << rec_size << " bytes\n";
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        printf( "RecordLayer::async_write wrote %u bytes\n", rec_size );
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM>::async_write(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::async_write(
         const void* buffer, uint32_t buffer_size )
 {
     uint32_t total_sent = 0;
@@ -293,8 +315,8 @@ coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM>::async_write(
     }
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<TlsSocket> RecordLayerImpl<OS_SEAM>::tls_accept(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<TlsSocket> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::tls_accept(
         Poller& poller, sockaddr_in6* peer_addr, KeyStore* keys_store )
 {
     TcpSocket client_sock = co_await m_socket.async_accept( poller, peer_addr );
@@ -324,7 +346,8 @@ coroutines::CoroutineAwaiter<TlsSocket> RecordLayerImpl<OS_SEAM>::tls_accept(
     record_size = TlsAcceptorImpl<OS_SEAM>::produce_server_finished_record( write_buffer, tls_handshake );
 
     uint32_t bytes_sent = co_await record_layer.async_write_buffer();
-    printf( "TlsServer::async_accept() sent %d bytes\n", bytes_sent );
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        printf( "TlsServer::async_accept() sent %d bytes\n", bytes_sent );
 
 
     uint8_t server_finished_transcript_hash[ EVP_MAX_MD_SIZE ]; // ClientHello...server Finished
@@ -346,8 +369,8 @@ coroutines::CoroutineAwaiter<TlsSocket> RecordLayerImpl<OS_SEAM>::tls_accept(
     co_return TlsSocket{ std::move(record_layer) };
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<bool> RecordLayerImpl<OS_SEAM>::tls_connect(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<bool> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::tls_connect(
         Poller& poller, const char* hostname, uint16_t port, const std::string& sni )
 {
     if( !co_await m_socket.async_connect( poller, hostname, port ) )
@@ -360,7 +383,8 @@ coroutines::CoroutineAwaiter<bool> RecordLayerImpl<OS_SEAM>::tls_connect(
     uint32_t record_size = TlsConnectorImpl<OS_SEAM>::produce_client_hello_record( m_write_buffer, tls_handshake );
 
     auto bytes_sent = co_await m_socket.async_write( m_write_buffer.head(), record_size );
-    printf( "RecordLayer::tls_connect sent %ld bytes\n", bytes_sent );
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        printf( "RecordLayer::tls_connect sent %ld bytes\n", bytes_sent );
     // ClientHello Must wait in write buffer until ServerHello will be read and hash method get known
 
     record::Parser parser;

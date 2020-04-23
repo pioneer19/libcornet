@@ -12,6 +12,7 @@
 #include <libcornet/tls/record_layer.hpp>
 #include <libcornet/tls/crypto/record_cryptor.hpp>
 
+#include <libcornet/log_level.hpp>
 #include <libcornet/coroutines_utils.hpp>
 
 namespace pioneer19::cornet::tls13
@@ -20,7 +21,7 @@ namespace pioneer19::cornet::tls13
 /**
  * @brief helper functions to process tls handshake on server side
  */
-template< typename OS_SEAM >
+template< typename OS_SEAM, LogLevel LOG_LEVEL=LogLevel::NONE >
 class TlsConnectorImpl
 {
 public:

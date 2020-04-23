@@ -18,17 +18,15 @@
 namespace pioneer19::cornet::tls13
 {
 
-template< typename OS_SEAM >
-uint32_t TlsConnectorImpl<OS_SEAM>::produce_client_hello_record(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+uint32_t TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::produce_client_hello_record(
         TlsReadBuffer& buffer, crypto::TlsHandshake& tls_handshake )
 {
-//    auto server_hello_record_size = RecordHelpers::server_hello_record_buffer_size(
-//                record_layer, tls_handshake );
-
     auto client_hello_record_size = RecordHelpers::client_hello_record_buffer_size( tls_handshake );
     auto size2 = RecordHelpers::create_client_hello_record( tls_handshake, buffer.tail() );
     assert( client_hello_record_size == size2 );
-    record::print_net_record( buffer.tail(), client_hello_record_size );
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        record::print_net_record( buffer.tail(), client_hello_record_size );
 
     buffer.produce( client_hello_record_size );
 
@@ -79,14 +77,15 @@ void ServerHelloHook::commit()
     m_record_cryptor->derive_client_server_traffic_secrets( true );
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM>::read_server_hello_record(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_server_hello_record(
         RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake, record::Parser& parser )
 {
     TlsReadBuffer& read_buffer = record_layer.m_read_buffer;
 
     co_await record_layer.read_full_record_skip_change_cipher_spec(); // FIXME: check result
-    record::print_net_record( read_buffer.head(), read_buffer.size() );
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        record::print_net_record( read_buffer.head(), read_buffer.size() );
     auto record_size = record::full_record_size( read_buffer.head() );
 
     if( ! record::is_handshake_record( read_buffer.head() ) )
@@ -116,8 +115,8 @@ coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM>::read_server_hello_
     co_return true;
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM>::read_encrypted_extensions_record(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_encrypted_extensions_record(
         RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake, record::Parser& parser )
 {
     uint32_t encrypted_record_size = co_await record_layer.read_record_decrypt_and_skip_change_cipher();
@@ -229,8 +228,8 @@ bool CertificateHook::verify_certificate( X509_STORE* trusted_store, X509* cert
     return verify_res > 0;
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM>::read_certificate_record(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_certificate_record(
         RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake,
         record::Parser& parser )
 {
@@ -299,8 +298,8 @@ inline bool CertificateVerifyHook::commit()
             *m_signature_scheme, m_signature, m_signature_size );
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM>::read_certificate_verify_record(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_certificate_verify_record(
         RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake,
         record::Parser& parser )
 {
@@ -371,8 +370,8 @@ bool ServerFinishedHook::commit()
 
     return true;
 }
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM>::read_server_finished_record(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_server_finished_record(
         RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake,
         record::Parser& parser )
 {
@@ -406,8 +405,8 @@ coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM>::read_server_finish
     co_return true;
 }
 
-template< typename OS_SEAM >
-coroutines::CoroutineAwaiter<uint32_t> TlsConnectorImpl<OS_SEAM>::send_client_finished_record(
+template< typename OS_SEAM, LogLevel LOG_LEVEL >
+coroutines::CoroutineAwaiter<uint32_t> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::send_client_finished_record(
         RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake )
 {
     uint8_t* buffer = record_layer.m_write_buffer.tail();
@@ -415,7 +414,8 @@ coroutines::CoroutineAwaiter<uint32_t> TlsConnectorImpl<OS_SEAM>::send_client_fi
     uint32_t rec_size = RecordHelpers::create_client_finished_record( tls_handshake, buffer );
 
     assert( rec_size == rec_size_calculated );
-    record::print_net_record( buffer, rec_size );
+    if constexpr ( LOG_LEVEL >= LogLevel::NOTICE )
+        record::print_net_record( buffer, rec_size );
     tls_handshake.add_message( record::handshake_message(buffer), record::record_content_size(buffer) );
 
     rec_size = co_await record_layer.encrypt_and_send_record(
