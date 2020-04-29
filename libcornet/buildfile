@@ -1,6 +1,7 @@
 int_libs = # Interface dependencies.
 imp_libs = # Implementation dependencies.
 #import imp_libs += libhello%lib{hello}
+import imp_libs += pioneer19_utils%lib{pioneer19_utils}
 
 lib{cornet}: {hxx ixx txx cxx}{** -version} hxx{version} $imp_libs $int_libs
 

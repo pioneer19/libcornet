@@ -12,10 +12,10 @@
 #include <libcornet/tcp_socket.hpp>
 namespace net = pioneer19::cornet;
 
-#include <libcornet/coroutines_utils.hpp>
-namespace coroutines = pioneer19::coroutines;
+#include <pioneer19_utils/coroutines_utils.hpp>
+using pioneer19::CommonCoroutine;
 
-coroutines::CommonCoroutine async_session( net::Poller& poller, const char* hostname )
+CommonCoroutine async_session( net::Poller& poller, const char* hostname )
 {
     net::TcpSocket client;
     co_await client.async_connect( poller, "localhost", 10000 );

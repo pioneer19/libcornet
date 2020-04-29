@@ -15,10 +15,11 @@
 #include <libcornet/poller.hpp>
 namespace net = pioneer19::cornet;
 
-#include <libcornet/coroutines_utils.hpp>
-namespace coroutines = pioneer19::coroutines;
+#include <pioneer19_utils/coroutines_utils.hpp>
+using pioneer19::LinkedCoroutine;
+using pioneer19::CommonCoroutine;
 
-coroutines::LinkedCoroutine create_session( net::tls13::TlsSocket tls_socket )
+LinkedCoroutine create_session( net::tls13::TlsSocket tls_socket )
 {
     uint8_t buffer[1024];
     auto bytes_read = co_await tls_socket.async_read( buffer, sizeof(buffer) );
@@ -26,14 +27,14 @@ coroutines::LinkedCoroutine create_session( net::tls13::TlsSocket tls_socket )
     co_await tls_socket.async_write( buffer, bytes_read );
 }
 
-coroutines::CommonCoroutine run_server( net::Poller& poller, const char* ip_address, size_t session_count )
+CommonCoroutine run_server( net::Poller& poller, const char* ip_address, size_t session_count )
 {
     net::tls13::TlsSocket tls_socket{};
     tls_socket.bind( ip_address, 10000 );
     tls_socket.listen( poller );
     printf( "Tls server listening\n" );
 
-    coroutines::LinkedCoroutine::List tls_sessions_list;
+    LinkedCoroutine::List tls_sessions_list;
     std::unique_ptr<net::tls13::SingleDomainKeyStore> key_store { new net::tls13::SingleDomainKeyStore(
             SNI_HOSTNAME, "./key.pem", "./cert.pem", "./cert_chain.pem" ) };
 

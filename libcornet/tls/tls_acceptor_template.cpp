@@ -142,7 +142,7 @@ void ClientHelloHook::signature_scheme( record::SignatureScheme scheme )
     }
 }
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<bool> TlsAcceptorImpl<OS_SEAM,LOG_LEVEL>::read_client_hello_record(
+CoroutineAwaiter<bool> TlsAcceptorImpl<OS_SEAM,LOG_LEVEL>::read_client_hello_record(
         RecordLayer& record_layer,
         crypto::TlsHandshake& tls_handshake,
         record::Parser& parser, KeyStore* domain_keys_store )
@@ -216,7 +216,7 @@ bool ClientFinishedHook::commit()
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<bool> TlsAcceptorImpl<OS_SEAM,LOG_LEVEL>::read_client_finished_record(
+CoroutineAwaiter<bool> TlsAcceptorImpl<OS_SEAM,LOG_LEVEL>::read_client_finished_record(
         RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake, record::Parser& parser )
 {
     TlsReadBuffer& read_buffer = record_layer.m_read_buffer;

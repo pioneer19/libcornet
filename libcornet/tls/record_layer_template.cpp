@@ -68,7 +68,7 @@ uint16_t RecordLayerImpl<OS_SEAM,LOG_LEVEL>::decrypt_record( uint8_t* buffer, cr
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::read_full_record()
+CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::read_full_record()
 {
     if( !is_full_record_in_buffer( m_read_buffer.head(), m_read_buffer.size() ) )
     {
@@ -95,8 +95,7 @@ coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::read_full
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<void>
-        RecordLayerImpl<OS_SEAM,LOG_LEVEL>::read_full_record_skip_change_cipher_spec()
+CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::read_full_record_skip_change_cipher_spec()
 {
     while( true )
     {
@@ -113,7 +112,7 @@ coroutines::CoroutineAwaiter<void>
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::async_read(
+CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::async_read(
         void* user_buffer, uint32_t buffer_size, uint32_t min_threshold )
 {
     uint32_t bytes_copied = 0;
@@ -180,7 +179,7 @@ coroutines::CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::async
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter <uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::read_and_decrypt_record()
+CoroutineAwaiter <uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::read_and_decrypt_record()
 {
     co_await read_full_record();
 
@@ -206,8 +205,7 @@ coroutines::CoroutineAwaiter <uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::read
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<uint32_t>
-        RecordLayerImpl<OS_SEAM,LOG_LEVEL>::read_record_decrypt_and_skip_change_cipher()
+CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::read_record_decrypt_and_skip_change_cipher()
 {
     uint32_t encrypted_record_size = 0;
     while( true )
@@ -248,7 +246,7 @@ coroutines::CoroutineAwaiter<uint32_t>
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter <uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::async_write_buffer()
+CoroutineAwaiter <uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::async_write_buffer()
 {
     uint32_t bytes_sent = 0;
     while( bytes_sent < m_write_buffer.size() )
@@ -265,7 +263,7 @@ coroutines::CoroutineAwaiter <uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::asyn
     co_return bytes_sent;
 }
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::encrypt_and_send_record(
+CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::encrypt_and_send_record(
         const void* buffer, uint32_t chunk_size )
 {
     uint8_t* record = m_write_buffer.tail();
@@ -285,7 +283,7 @@ coroutines::CoroutineAwaiter<uint32_t> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::encry
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::encrypt_and_send_application_data(
+CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::encrypt_and_send_application_data(
         const void* buffer, uint32_t chunk_size )
 {
     assert( chunk_size <= 16 * 1024 ); // TlsPlaintext payload limit
@@ -301,7 +299,7 @@ coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::encrypt_a
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::async_write(
+CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::async_write(
         const void* buffer, uint32_t buffer_size )
 {
     uint32_t total_sent = 0;
@@ -316,7 +314,7 @@ coroutines::CoroutineAwaiter<void> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::async_wri
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<TlsSocket> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::tls_accept(
+CoroutineAwaiter<TlsSocket> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::tls_accept(
         Poller& poller, sockaddr_in6* peer_addr, KeyStore* keys_store )
 {
     TcpSocket client_sock = co_await m_socket.async_accept( poller, peer_addr );
@@ -370,7 +368,7 @@ coroutines::CoroutineAwaiter<TlsSocket> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::tls_
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<bool> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::tls_connect(
+CoroutineAwaiter<bool> RecordLayerImpl<OS_SEAM,LOG_LEVEL>::tls_connect(
         Poller& poller, const char* hostname, uint16_t port, const std::string& sni )
 {
     if( !co_await m_socket.async_connect( poller, hostname, port ) )

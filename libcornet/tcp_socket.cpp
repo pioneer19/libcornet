@@ -218,7 +218,7 @@ auto TcpSocket::poll_write_event()
     return Awaiter{*m_poller_cb};
 }
 
-coroutines::CoroutineAwaiter<ssize_t> TcpSocket::try_async_read( void* buffer, uint32_t buffer_size )
+CoroutineAwaiter<ssize_t> TcpSocket::try_async_read( void* buffer, uint32_t buffer_size )
 {
     ssize_t bytes_read = 0;
     while( true )
@@ -240,7 +240,7 @@ coroutines::CoroutineAwaiter<ssize_t> TcpSocket::try_async_read( void* buffer, u
     co_return bytes_read;
 }
 
-coroutines::CoroutineAwaiter<ssize_t> TcpSocket::async_read(
+CoroutineAwaiter<ssize_t> TcpSocket::async_read(
         void* buffer, uint32_t buffer_size, uint32_t min_threshold )
 {
     assert( buffer_size >= min_threshold );
@@ -288,7 +288,7 @@ coroutines::CoroutineAwaiter<ssize_t> TcpSocket::async_read(
     co_return total_read;
 }
 
-coroutines::CoroutineAwaiter<ssize_t> TcpSocket::try_async_write( const void* buffer, size_t buffer_size )
+CoroutineAwaiter<ssize_t> TcpSocket::try_async_write( const void* buffer, size_t buffer_size )
 {
 #if defined(USE_IO_URING)
     ssize_t bytes_wrote = co_await NetUring::instance().async_write( m_socket_fd, buffer, buffer_size );
@@ -312,7 +312,7 @@ coroutines::CoroutineAwaiter<ssize_t> TcpSocket::try_async_write( const void* bu
 
     co_return bytes_wrote;
 }
-coroutines::CoroutineAwaiter<ssize_t> TcpSocket::async_write( const void* buffer, uint32_t buffer_size )
+CoroutineAwaiter<ssize_t> TcpSocket::async_write( const void* buffer, uint32_t buffer_size )
 {   // if last write sent less bytes then asked, EPOLLOUT will be reset
     // but if previous write send bytes equal to send buffer size, buffer will be full,
     // but EPOLLOUT will be set
@@ -333,7 +333,7 @@ coroutines::CoroutineAwaiter<ssize_t> TcpSocket::async_write( const void* buffer
     }
 }
 
-coroutines::CoroutineAwaiter<int> TcpSocket::try_async_accept( sockaddr_in6* peer_addr )
+CoroutineAwaiter<int> TcpSocket::try_async_accept( sockaddr_in6* peer_addr )
 {
     while( true )
     {
@@ -361,7 +361,7 @@ coroutines::CoroutineAwaiter<int> TcpSocket::try_async_accept( sockaddr_in6* pee
         co_return accepted_fd;
     }
 }
-coroutines::CoroutineAwaiter<TcpSocket> TcpSocket::async_accept( Poller& poller, sockaddr_in6* peer_addr )
+CoroutineAwaiter<TcpSocket> TcpSocket::async_accept( Poller& poller, sockaddr_in6* peer_addr )
 {
     if( m_poller_cb->events_mask & EPOLLIN )
     { // if previous accept() got last socket, EPOLLIN will be set but next accept() will fail
@@ -375,7 +375,7 @@ coroutines::CoroutineAwaiter<TcpSocket> TcpSocket::async_accept( Poller& poller,
     co_return TcpSocket{ accepted_fd, &poller };
 }
 
-coroutines::CoroutineAwaiter<bool> TcpSocket::async_connect( Poller& poller, const sockaddr_in6* peer_addr )
+CoroutineAwaiter<bool> TcpSocket::async_connect( Poller& poller, const sockaddr_in6* peer_addr )
 {
     m_poller_cb->writer_coro_handle = nullptr;
     m_poller_cb->reader_coro_handle = nullptr;
@@ -408,7 +408,7 @@ coroutines::CoroutineAwaiter<bool> TcpSocket::async_connect( Poller& poller, con
         co_return true;
     }
 }
-coroutines::CoroutineAwaiter<bool> TcpSocket::async_connect( Poller& poller, const char* hostname, uint16_t port )
+CoroutineAwaiter<bool> TcpSocket::async_connect( Poller& poller, const char* hostname, uint16_t port )
 {
     PeerResolver resolver( hostname );
 

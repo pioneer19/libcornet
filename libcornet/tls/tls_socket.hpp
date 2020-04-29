@@ -12,7 +12,7 @@
 
 #include <libcornet/tcp_socket.hpp>
 #include <libcornet/tls/record_layer.hpp>
-#include <libcornet/coroutines_utils.hpp>
+#include <pioneer19_utils/coroutines_utils.hpp>
 
 namespace pioneer19::cornet::tls13
 {
@@ -30,9 +30,9 @@ public:
 
     void bind( const char* ip_address, uint16_t port );
     void listen( Poller& poller );
-    coroutines::CoroutineAwaiter<TlsSocket> async_accept(
+    CoroutineAwaiter<TlsSocket> async_accept(
             Poller& poller, sockaddr_in6* peer_addr, KeyStore* keys_store );
-    coroutines::CoroutineAwaiter<bool> async_connect( Poller& poller, const char* hostname, uint16_t port
+    CoroutineAwaiter<bool> async_connect( Poller& poller, const char* hostname, uint16_t port
             , const char* sni=nullptr );
     auto async_read( void* buffer, size_t buffer_size )
     { return m_record_layer.async_read( buffer, buffer_size ); }
@@ -60,13 +60,13 @@ inline void TlsSocket::listen( Poller& poller )
     m_record_layer.listen(poller);
 }
 
-inline coroutines::CoroutineAwaiter<TlsSocket> TlsSocket::async_accept(
+inline CoroutineAwaiter<TlsSocket> TlsSocket::async_accept(
         Poller& poller, sockaddr_in6* peer_addr, KeyStore* keys_store )
 {
     return m_record_layer.tls_accept( poller, peer_addr, keys_store );
 }
 
-inline coroutines::CoroutineAwaiter<bool> TlsSocket::async_connect(
+inline CoroutineAwaiter<bool> TlsSocket::async_connect(
         Poller& poller, const char* hostname, uint16_t port, const char* sni )
 {
     std::string tls_sni;

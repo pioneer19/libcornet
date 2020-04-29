@@ -13,7 +13,7 @@
 #include <libcornet/tls/crypto/record_cryptor.hpp>
 
 #include <libcornet/log_level.hpp>
-#include <libcornet/coroutines_utils.hpp>
+#include <pioneer19_utils/coroutines_utils.hpp>
 
 namespace pioneer19::cornet::tls13
 {
@@ -27,19 +27,19 @@ class TlsConnectorImpl
 public:
     ~TlsConnectorImpl() = default;
 
-    static coroutines::CoroutineAwaiter<bool> read_server_hello_record(
+    static CoroutineAwaiter<bool> read_server_hello_record(
             RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake, record::Parser& parser );
-    static coroutines::CoroutineAwaiter<bool> read_encrypted_extensions_record(
+    static CoroutineAwaiter<bool> read_encrypted_extensions_record(
             RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake, record::Parser& parser );
-    static coroutines::CoroutineAwaiter<bool> read_certificate_record(
+    static CoroutineAwaiter<bool> read_certificate_record(
             RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake, record::Parser& parser );
-    static coroutines::CoroutineAwaiter<bool> read_certificate_verify_record(
+    static CoroutineAwaiter<bool> read_certificate_verify_record(
             RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake, record::Parser& parser );
-    static coroutines::CoroutineAwaiter<bool> read_server_finished_record(
+    static CoroutineAwaiter<bool> read_server_finished_record(
             RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake, record::Parser& parser );
 
     static uint32_t produce_client_hello_record( TlsReadBuffer& buffer, crypto::TlsHandshake& tls_handshake );
-    static coroutines::CoroutineAwaiter<uint32_t> send_client_finished_record(
+    static CoroutineAwaiter<uint32_t> send_client_finished_record(
             RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake );
 
     TlsConnectorImpl() = delete;

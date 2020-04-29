@@ -14,7 +14,7 @@
 #include <openssl/err.h>
 
 #include <libcornet/tls/key_store.hpp>
-#include <libcornet/guards.hpp>
+#include <pioneer19_utils/guards.hpp>
 
 namespace pioneer19::cornet::tls13
 {
@@ -25,7 +25,7 @@ static X509* load_cert( const char* cert_file_name )
     if( cert_file == nullptr )
         throw std::system_error( errno, std::system_category(),
                 std::string("fopen() cert file \"")+cert_file_name );
-    auto file_close_guard = guards::make_scope_guard( [cert_file](){ fclose(cert_file); } );
+    auto file_close_guard = make_scope_guard( [cert_file](){ fclose(cert_file); } );
 
     X509* cert = PEM_read_X509(cert_file, nullptr, nullptr, nullptr );
     if( cert == nullptr )
@@ -43,7 +43,7 @@ static EVP_PKEY* load_key( const char* key_file_name )
     if( key_file == nullptr )
         throw std::system_error( errno, std::system_category(),
                 std::string("fopen() key file \"")+key_file_name );
-    auto file_close_guard = guards::make_scope_guard( [key_file](){ fclose(key_file); } );
+    auto file_close_guard = make_scope_guard( [key_file](){ fclose(key_file); } );
 
 
     EVP_PKEY* pkey = PEM_read_PrivateKey( key_file, nullptr, nullptr, nullptr );

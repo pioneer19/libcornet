@@ -16,7 +16,7 @@
 #include <system_error>
 
 #include <libcornet/poller.hpp>
-#include <libcornet/coroutines_utils.hpp>
+#include <pioneer19_utils/coroutines_utils.hpp>
 
 #include <libcornet/config.hpp>
 #include <libcornet/net_uring.hpp>
@@ -49,11 +49,11 @@ public:
     ssize_t read( char* buff, size_t buff_size );
     ssize_t write( const char* buff, size_t buff_size );
 
-    coroutines::CoroutineAwaiter<TcpSocket> async_accept( Poller& poller, sockaddr_in6* peer_addr );
+    CoroutineAwaiter<TcpSocket> async_accept( Poller& poller, sockaddr_in6* peer_addr );
     [[nodiscard]]
-    coroutines::CoroutineAwaiter<bool> async_connect( Poller& poller, const sockaddr_in6* peer_addr );
+    CoroutineAwaiter<bool> async_connect( Poller& poller, const sockaddr_in6* peer_addr );
     [[nodiscard]]
-    coroutines::CoroutineAwaiter<bool> async_connect( Poller& poller, const char* hostname, uint16_t port );
+    CoroutineAwaiter<bool> async_connect( Poller& poller, const char* hostname, uint16_t port );
 
     /**
      * receive data from tcp socket to buffer until got min_threshold bytes, buffer_size is max threshold
@@ -67,9 +67,9 @@ public:
      * @param min_threshold min data_size to red
      * @return received data size
      */
-    coroutines::CoroutineAwaiter<ssize_t> async_read( void* buffer, uint32_t buffer_size
+    CoroutineAwaiter<ssize_t> async_read( void* buffer, uint32_t buffer_size
             , uint32_t min_threshold = 1 );
-    coroutines::CoroutineAwaiter<ssize_t> async_write( const void* buffer, uint32_t buffer_size );
+    CoroutineAwaiter<ssize_t> async_write( const void* buffer, uint32_t buffer_size );
     TcpSocket::ReadVAwaiter async_readv( iovec *iov, uint32_t iovcnt );
 
     void close();
@@ -92,9 +92,9 @@ private:
      * @return Awaiter for co_await
      */
     auto poll_write_event();
-    coroutines::CoroutineAwaiter<int>     try_async_accept(  sockaddr_in6* peer_addr );
-    coroutines::CoroutineAwaiter<ssize_t> try_async_read(  void* buffer, uint32_t buffer_size );
-    coroutines::CoroutineAwaiter<ssize_t> try_async_write( const void* buffer, size_t buffer_size );
+    CoroutineAwaiter<int>     try_async_accept(  sockaddr_in6* peer_addr );
+    CoroutineAwaiter<ssize_t> try_async_read(  void* buffer, uint32_t buffer_size );
+    CoroutineAwaiter<ssize_t> try_async_write( const void* buffer, size_t buffer_size );
 
     std::unique_ptr<PollerCb> m_poller_cb;
     int m_socket_fd = -1;

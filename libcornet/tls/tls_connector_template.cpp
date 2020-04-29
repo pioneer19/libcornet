@@ -78,7 +78,7 @@ void ServerHelloHook::commit()
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_server_hello_record(
+CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_server_hello_record(
         RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake, record::Parser& parser )
 {
     TlsReadBuffer& read_buffer = record_layer.m_read_buffer;
@@ -116,7 +116,7 @@ coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_ser
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_encrypted_extensions_record(
+CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_encrypted_extensions_record(
         RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake, record::Parser& parser )
 {
     uint32_t encrypted_record_size = co_await record_layer.read_record_decrypt_and_skip_change_cipher();
@@ -229,7 +229,7 @@ bool CertificateHook::verify_certificate( X509_STORE* trusted_store, X509* cert
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_certificate_record(
+CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_certificate_record(
         RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake,
         record::Parser& parser )
 {
@@ -299,7 +299,7 @@ inline bool CertificateVerifyHook::commit()
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_certificate_verify_record(
+CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_certificate_verify_record(
         RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake,
         record::Parser& parser )
 {
@@ -371,7 +371,7 @@ bool ServerFinishedHook::commit()
     return true;
 }
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_server_finished_record(
+CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_server_finished_record(
         RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake,
         record::Parser& parser )
 {
@@ -406,7 +406,7 @@ coroutines::CoroutineAwaiter<bool> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::read_ser
 }
 
 template< typename OS_SEAM, LogLevel LOG_LEVEL >
-coroutines::CoroutineAwaiter<uint32_t> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::send_client_finished_record(
+CoroutineAwaiter<uint32_t> TlsConnectorImpl<OS_SEAM,LOG_LEVEL>::send_client_finished_record(
         RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake )
 {
     uint8_t* buffer = record_layer.m_write_buffer.tail();

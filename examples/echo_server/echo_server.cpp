@@ -13,10 +13,11 @@
 #include <libcornet/poller.hpp>
 namespace net = pioneer19::cornet;
 
-#include <libcornet/coroutines_utils.hpp>
-namespace coroutines = pioneer19::coroutines;
+#include <pioneer19_utils/coroutines_utils.hpp>
+using pioneer19::LinkedCoroutine;
+using pioneer19::CommonCoroutine;
 
-coroutines::LinkedCoroutine create_session( net::TcpSocket tcp_socket )
+LinkedCoroutine create_session( net::TcpSocket tcp_socket )
 {
     uint8_t buffer[1024];
     auto bytes_read = co_await tcp_socket.async_read( buffer, sizeof(buffer) );
@@ -25,14 +26,14 @@ coroutines::LinkedCoroutine create_session( net::TcpSocket tcp_socket )
     printf( "echo_session sent back %ld bytes\n", bytes_sent );
 }
 
-coroutines::CommonCoroutine run_server( net::Poller& poller, const char* ip_address, size_t session_count )
+CommonCoroutine run_server( net::Poller& poller, const char* ip_address, size_t session_count )
 {
     net::TcpSocket tcp_socket{};
     tcp_socket.bind( ip_address, 10000 );
     tcp_socket.listen( poller );
     printf( "tcp server listening...\n" );
 
-    coroutines::LinkedCoroutine::List tls_sessions_list;
+    LinkedCoroutine::List tls_sessions_list;
 
     for( size_t i = 0; session_count==0 || i < session_count; ++i ) // infinite for session_count == 0
     {

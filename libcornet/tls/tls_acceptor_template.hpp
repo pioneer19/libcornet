@@ -14,7 +14,7 @@
 #include <libcornet/tls/crypto/record_cryptor.hpp>
 
 #include <libcornet/log_level.hpp>
-#include <libcornet/coroutines_utils.hpp>
+#include <pioneer19_utils/coroutines_utils.hpp>
 
 namespace pioneer19::cornet::tls13
 {
@@ -33,10 +33,10 @@ public:
     TlsAcceptorImpl& operator=( const TlsAcceptorImpl& ) = delete;
     ~TlsAcceptorImpl() = default;
 
-    static coroutines::CoroutineAwaiter<bool> read_client_hello_record(
+    static CoroutineAwaiter<bool> read_client_hello_record(
             RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake,
             record::Parser& parser, KeyStore* domain_keys_store );
-    static coroutines::CoroutineAwaiter<bool> read_client_finished_record(
+    static CoroutineAwaiter<bool> read_client_finished_record(
             RecordLayer& record_layer, crypto::TlsHandshake& tls_handshake, record::Parser& parser );
 
     static uint32_t produce_server_hello_record(
