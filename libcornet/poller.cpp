@@ -84,40 +84,24 @@ void Poller::run()
             auto* poller_cb = reinterpret_cast<PollerCb*>(curr_event.data.ptr);
 //            printf( "epoll_wait for poller_cb %p got events %s\n"
 //                    , (void*)poller_cb, events_string( curr_event.events ).c_str() );
+            poller_cb->add_reference();
             poller_cb->events_mask = curr_event.events;
-            poller_cb->m_backlink = &curr_event;
         }
         /*
-         * poller_cb->m_backlink  references curr_event
-         * current_event.data.ptr references poller_cb
-         * current_event is local data, poller_cb is socket's data
-         * poller_cb can be removed with socket in any coro.resume() call
+         * current_event.data.ptr - pointer to poller_cb.
+         * to eliminate removing poller_cb with socket delete until poller not
+         * finished it's processing, poller holds reference to poller_cb
+         * (in this case poller_cb will be cleared, but not removed)
          */
         for( uint32_t i = 0; i < static_cast<uint32_t>(res); ++i )
         {
             auto& curr_event = events[i];
-            // curr_event.data.ptr will be nullptr in case poller_cb removed
-            // in previous event processing
             if( curr_event.data.ptr == nullptr )
                 continue;
-            auto poller_cb = reinterpret_cast<PollerCb*>(curr_event.data.ptr);
-            if( (curr_event.events & EPOLLOUT)
-                && poller_cb->writer_coro_handle )
-            {
-                poller_cb->writer_coro_handle.resume();
-            }
-            // curr_event.data.ptr will be nullptr in case poller_cb removed
-            // in previous event processing or in writer_coro_handle.resume()
-            if( curr_event.data.ptr == nullptr )
-                continue;
-            if( (curr_event.events & EPOLLIN)
-                && poller_cb->reader_coro_handle )
-            {
-                poller_cb->reader_coro_handle.resume();
-            }
-            // can be nullptr in case poller_cb removed
-            if( curr_event.data.ptr != nullptr )
-                poller_cb->m_backlink = nullptr;
+            auto poller_cb = reinterpret_cast<PollerCb*>( curr_event.data.ptr );
+            poller_cb->process_event();
+
+            PollerCb::rm_reference( poller_cb );
         }
 #if defined(USE_IO_URING)
         uint32_t queue_size = NetUring::instance().process_requests();

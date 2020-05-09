@@ -16,7 +16,6 @@
 #include <cerrno>
 #include <unistd.h>
 
-#include <memory>
 #include <algorithm>
 #include <system_error>
 
@@ -35,7 +34,7 @@ void TcpSocket::create_socket()
     m_socket_fd = socket( AF_INET6, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0 );
     if( m_socket_fd == -1 )
         throw std::system_error(errno, std::system_category(), "failed create_socket socket" );
-    m_poller_cb = std::make_unique<PollerCb>();
+    m_poller_cb = new PollerCb;
 }
 
 TcpSocket::TcpSocket( TcpSocket&& other ) noexcept
@@ -51,7 +50,7 @@ TcpSocket& TcpSocket::operator=( TcpSocket&& other ) noexcept
     {
         close();
         std::swap( m_socket_fd, other.m_socket_fd );
-        m_poller_cb.swap( other.m_poller_cb );
+        std::swap( m_poller_cb, other.m_poller_cb );
     }
     return *this;
 }
@@ -61,7 +60,7 @@ TcpSocket::TcpSocket( int socket_fd, Poller* poller )
         ,m_socket_fd( socket_fd )
 {
     if( poller )
-        poller->add_socket( *this, m_poller_cb.get() );
+        poller->add_socket( *this, m_poller_cb );
 }
 
 void TcpSocket::bind( const char* ip_address, uint16_t port )
@@ -101,7 +100,7 @@ void TcpSocket::listen( Poller& poller )
 
     m_poller_cb->writer_coro_handle = nullptr;
     m_poller_cb->reader_coro_handle = nullptr;
-    poller.add_socket( *this, m_poller_cb.get(), EPOLLIN );
+    poller.add_socket( *this, m_poller_cb, EPOLLIN );
 }
 
 TcpSocket TcpSocket::accept( sockaddr_in6& peer_addr )
@@ -135,14 +134,15 @@ ssize_t TcpSocket::write( const char* buff, size_t buff_size )
 
 void TcpSocket::close()
 {
-    if( m_socket_fd != -1 )
-    {
-        ::close( m_socket_fd );
-        m_socket_fd = -1;
+    if( m_socket_fd == -1 )
+        return;
 
-        Poller::clear_backlink( m_poller_cb->m_backlink );
-        m_poller_cb.reset( nullptr );
-    }
+    ::close( m_socket_fd );
+    m_socket_fd = -1;
+
+    m_poller_cb->clean();
+    PollerCb::rm_reference( m_poller_cb );
+    m_poller_cb = nullptr;
 }
 
 void TcpSocket::shutdown( int how )
@@ -379,7 +379,7 @@ CoroutineAwaiter<bool> TcpSocket::async_connect( Poller& poller, const sockaddr_
 {
     m_poller_cb->writer_coro_handle = nullptr;
     m_poller_cb->reader_coro_handle = nullptr;
-    poller.add_socket( *this, m_poller_cb.get() );
+    poller.add_socket( *this, m_poller_cb );
 
     while( true )
     {

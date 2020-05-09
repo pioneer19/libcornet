@@ -12,7 +12,6 @@
 
 #include <cstdint>
 #include <cstring>
-#include <memory>
 #include <system_error>
 
 #include <libcornet/poller.hpp>
@@ -96,7 +95,7 @@ private:
     CoroutineAwaiter<ssize_t> try_async_read(  void* buffer, uint32_t buffer_size );
     CoroutineAwaiter<ssize_t> try_async_write( const void* buffer, size_t buffer_size );
 
-    std::unique_ptr<PollerCb> m_poller_cb;
+    PollerCb* m_poller_cb = nullptr;
     int m_socket_fd = -1;
 };
 

@@ -12,17 +12,16 @@
 #include <memory>
 #include <system_error>
 
-#include <experimental/coroutine>
-
 #include <libcornet/poller.hpp>
 
 namespace pioneer19::cornet
 {
 
 AsyncFile::AsyncFile( AsyncFile&& other ) noexcept
-    :m_poller_cb( other.m_poller_cb.release() )
+    :m_poller_cb( other.m_poller_cb )
     ,m_fd( other.m_fd )
 {
+    other.m_poller_cb = nullptr;
     other.m_fd = -1;
 }
 
@@ -32,7 +31,7 @@ AsyncFile& AsyncFile::operator=( AsyncFile&& other ) noexcept
     {
         close();
         std::swap( m_fd, other.m_fd );
-        m_poller_cb.swap( other.m_poller_cb );
+        std::swap( m_poller_cb, other.m_poller_cb );
     }
     return *this;
 }
@@ -42,7 +41,7 @@ AsyncFile::AsyncFile( int fd, Poller* poller )
     ,m_fd( fd )
 {
     if( poller )
-        poller->add_file( *this, m_poller_cb.get(), EPOLLIN );
+        poller->add_file( *this, m_poller_cb, EPOLLIN );
 }
 
 ssize_t AsyncFile::read( char* buff, size_t buff_size )
@@ -62,8 +61,9 @@ void AsyncFile::close()
     ::close( m_fd );
     m_fd = -1;
 
-    Poller::clear_backlink( m_poller_cb->m_backlink );
-    m_poller_cb.reset( nullptr );
+    m_poller_cb->clean();
+    PollerCb::rm_reference( m_poller_cb );
+    m_poller_cb = nullptr;
 }
 
 AsyncFile::~AsyncFile() noexcept

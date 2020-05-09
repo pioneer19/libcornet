@@ -8,9 +8,9 @@ include ../../libcornet/
 ./: exe{malloc_benchmark}: {cxx}{malloc_benchmark} $libs ../../libcornet/lib{cornet}
 obj{*}:
 {
-    cc.coptions+=-O3
+    cc.coptions += -O3 -mrdrnd
 }
 exe{*}:
 {
-    cc.loptions+=-O3
+    cc.loptions += -O3
 }

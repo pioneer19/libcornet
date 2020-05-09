@@ -38,7 +38,6 @@ public:
             ,uint32_t mask = EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLPRI|EPOLLET );
     void add_file( const AsyncFile& async_file, PollerCb* poller_cb
             ,uint32_t mask = EPOLLIN|EPOLLRDHUP|EPOLLPRI|EPOLLET );
-    static void clear_backlink( void* backlink ) noexcept;
 
     static std::string events_string( uint32_t events_mask );
 
@@ -51,16 +50,5 @@ private:
     bool m_stop = false;
     std::unique_ptr<SignalProcessor> m_signal_processor;
 };
-
-inline void Poller::clear_backlink( void* backlink ) noexcept
-{
-    if( backlink == nullptr )
-        return;
-
-    auto* event = reinterpret_cast<epoll_event*>(backlink);
-    auto poller_cb = reinterpret_cast<PollerCb*>(event->data.ptr);
-    poller_cb->m_backlink = nullptr;
-    event->data.ptr = nullptr;
-}
 
 }

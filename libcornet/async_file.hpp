@@ -8,10 +8,11 @@
 #pragma once
 
 #include <sys/epoll.h>
+#include <unistd.h>
 
-#include <cstdint>
-#include <memory>
+#include <cstddef>
 #include <system_error>
+#include <experimental/coroutine>
 
 #include <libcornet/poller_cb.hpp>
 
@@ -62,9 +63,10 @@ private:
     friend class Poller;
     friend class SignalProcessor;
 
+    [[nodiscard]]
     int fd() const;
 
-    std::unique_ptr<PollerCb> m_poller_cb;
+    PollerCb* m_poller_cb = nullptr;
     int m_fd = -1;
 };
 
@@ -92,7 +94,7 @@ inline ssize_t AsyncFile::ReadAwaiter::await_resume()
 
 inline AsyncFile::ReadAwaiter AsyncFile::async_read( char* buff, size_t buff_size )
 {
-    return ReadAwaiter{ *(m_poller_cb.get()), m_fd, buff, buff_size };
+    return ReadAwaiter{ *m_poller_cb, m_fd, buff, buff_size };
 }
 
 }

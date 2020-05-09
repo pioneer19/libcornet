@@ -5,3 +5,4 @@ exe{rdrand}: {hxx ixx txx cxx}{**} $libs
 
 cxx.poptions =+ "-I$src_root/.."
 #cxx.poptions =+ "-I$out_root" "-I$src_root"
+cxx.coptions =+ -mrdrnd
