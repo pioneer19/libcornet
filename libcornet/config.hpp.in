@@ -1,0 +1,19 @@
+/*
+ * Copyright 2020 Alex Syrnikov <pioneer19@post.cz>
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * This file is part of libcornet (https://github.com/pioneer19/libcornet).
+ */
+
+#pragma once
+// auto generated file from config.hpp.in
+
+#define USE_IO_URING  $config.libcornet.use_io_uring$
+#define SNI_HOSTNAME  "$config.libcornet.sni_hostname$"
+
+namespace pioneer19::cornet::config
+{
+    inline constexpr char  io_mode[]     = "$config.libcornet.io_mode$";
+    inline constexpr bool  use_common_io = $config.libcornet.use_common_io$;
+    inline constexpr bool  use_io_uring  = $config.libcornet.use_io_uring$;
+}

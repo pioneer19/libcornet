@@ -6,6 +6,7 @@
  */
 
 #pragma once
+// auto generated from version.hpp.in
 
 // The numeric version format is AAABBBCCCDDDE where:
 //

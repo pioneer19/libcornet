@@ -6,6 +6,14 @@
  */
 
 #pragma once
+// auto generated file from config.hpp.in
 
-// #define USE_IO_URING 1
-#define SNI_HOSTNAME "localhost"
+#define USE_IO_URING  true
+#define SNI_HOSTNAME  "localhost"
+
+namespace pioneer19::cornet::config
+{
+    inline constexpr char  io_mode[]     = "io_uring";
+    inline constexpr bool  use_common_io = false;
+    inline constexpr bool  use_io_uring  = true;
+}

@@ -5,7 +5,7 @@ summary: networking library using C++ coroutines
 license: ASLv2
 url: https://github.com/pioneer19/libcornet
 email: pioneer19@post.cz
-depends: * build2 >= 0.8.0-
+depends: * build2 >= 0.13.0-
 depends: * bpkg >= 0.8.0-
 depends: * doctest >= 2.3.5
 depends: * pioneer19_utils

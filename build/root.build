@@ -1,6 +1,7 @@
 cxx.std = latest
 
 using cxx
+using in
 
 hxx{*}: extension = hpp
 ixx{*}: extension = ipp
@@ -10,3 +11,22 @@ cxx{*}: extension = cpp
 # The test target for cross-testing (running tests under Wine, etc).
 #
 test.target = $cxx.target
+
+config [string] config.libcornet.sni_hostname ?= 'localhost'
+# io_mode: 'io_uring' or 'common_io'
+config [string] config.libcornet.io_mode  ?= 'common_io'
+config [bool]   config.libcornet.use_common_io
+config [bool]   config.libcornet.use_io_uring
+
+if( $config.libcornet.io_mode == 'common_io' )
+{
+    config config.libcornet.use_common_io ?= true
+    config config.libcornet.use_io_uring  ?= false
+}
+elif( $config.libcornet.io_mode == 'io_uring' )
+{
+    config config.libcornet.use_io_uring  ?= true
+    config config.libcornet.use_common_io ?= false
+}
+else
+    fail "config.libcornet.io_mode == ''$config.libcornet.io_mode', but MUST be 'io_uring' or 'common_io'"

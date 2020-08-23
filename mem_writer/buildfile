@@ -1,3 +1,4 @@
 libs =
 
 exe{mem_writer}: {hxx ixx txx cxx}{**}
+#exe{mem_writer}: backlink = false

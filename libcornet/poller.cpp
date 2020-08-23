@@ -103,7 +103,7 @@ void Poller::run()
 
             PollerCb::rm_reference( poller_cb );
         }
-#if defined(USE_IO_URING)
+#if USE_IO_URING
         uint32_t queue_size = NetUring::instance().process_requests();
         if( queue_size != 0 )
             timeout_ms = 0;

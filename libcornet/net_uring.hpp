@@ -8,7 +8,7 @@
 #pragma once
 
 #include <libcornet/config.hpp>
-#if defined(USE_IO_URING)
+#if USE_IO_URING
 
 #include <sys/uio.h>
 #include <sys/types.h>

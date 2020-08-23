@@ -6,7 +6,7 @@
  */
 
 #include <libcornet/config.hpp>
-#if defined(USE_IO_URING)
+#if USE_IO_URING
 
 #include <libcornet/net_uring.hpp>
 

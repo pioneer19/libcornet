@@ -223,7 +223,7 @@ CoroutineAwaiter<ssize_t> TcpSocket::try_async_read( void* buffer, uint32_t buff
     ssize_t bytes_read = 0;
     while( true )
     {
-#if defined(USE_IO_URING)
+#if USE_IO_URING
         bytes_read = co_await NetUring::instance().async_read( m_socket_fd, buffer, buffer_size );
 #else
         ssize_t bytes_read = ::recv( m_socket_fd, buffer, buffer_size, MSG_DONTWAIT );
@@ -290,7 +290,7 @@ CoroutineAwaiter<ssize_t> TcpSocket::async_read(
 
 CoroutineAwaiter<ssize_t> TcpSocket::try_async_write( const void* buffer, size_t buffer_size )
 {
-#if defined(USE_IO_URING)
+#if USE_IO_URING
     ssize_t bytes_wrote = co_await NetUring::instance().async_write( m_socket_fd, buffer, buffer_size );
 #else
     ssize_t bytes_wrote = ::send( m_socket_fd, buffer, buffer_size, MSG_DONTWAIT|MSG_NOSIGNAL );
