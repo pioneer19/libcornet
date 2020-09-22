@@ -18,7 +18,7 @@ using pioneer19::CommonCoroutine;
 CommonCoroutine async_session( net::Poller& poller, const char* hostname )
 {
     net::TcpSocket client;
-    co_await client.async_connect( poller, "localhost", 10000 );
+    co_await client.async_connect( poller, hostname, 10000 );
     std::cout << "async_session connected tcp socket\n";
 
     char buff[] = {"Hello, World\n"};
